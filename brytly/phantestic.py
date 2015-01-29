@@ -26,7 +26,7 @@ class SuiteRun(object):
             print("adding keepGoing callback", self.suiteID)
             keepGoingCB = lambda result: self.keepGoing()
             d = case.run(self.result)
-            # d.addBoth(lambda result: print(self.suiteID) or self.keepGoing())
+            # d.addBoth(lambda result: self.keepGoing())
             # ^ why doesn't this work?
             d.addBoth(keepGoingCB)
 
