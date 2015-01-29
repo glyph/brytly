@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>TESTS</title>
+    <script src="../src/brython.js"></script>
+  </head>
+  <body onload="brython({debug: true})">
+    <script type="text/python">
+      from brytly.phantestic import Executor
+      from brytly.test import test_stub
+      e = Executor(test_stub.__dict__)
+      e.execute()
+    </script>
+  </body>
+</html>

@@ -1,8 +1,6 @@
 
 from deferred import maybeDeferred, Deferred, Failure
 
-
-
 class TestFailure(Exception):
     """
     A test failed.
@@ -11,19 +9,26 @@ class TestFailure(Exception):
 
 
 class SuiteRun(object):
-    def __init__(self, caseIterator, result):
+    def __init__(self, suiteID, caseIterator, result):
+        self.suiteID = suiteID
         self.caseIterator = caseIterator
         self.result = result
         self.finished = Deferred()
 
 
-    def keepGoing(self):
+    def keepGoing(self, hrm=None):
+        print("keeping going", self.suiteID, hrm)
         try:
-            case = self.caseIterator.next()
+            case = next(self.caseIterator)
         except StopIteration:
             self.finished.callback(None)
         else:
-            case.run(self.result).addBoth(lambda result: self.keepGoing())
+            print("adding keepGoing callback", self.suiteID)
+            keepGoingCB = lambda result: self.keepGoing()
+            d = case.run(self.result)
+            # d.addBoth(lambda result: print(self.suiteID) or self.keepGoing())
+            # ^ why doesn't this work?
+            d.addBoth(keepGoingCB)
 
 
 
@@ -38,7 +43,9 @@ class TestSuite(object):
 
 
     def run(self, result):
-        run = SuiteRun(iter(self.cases), result)
+        print("running suite", self.id())
+        run = SuiteRun(self.id(), iter(self.cases), result)
+        print("initial")
         run.keepGoing()
         return run.finished
 
@@ -101,6 +108,7 @@ class TestCase(object):
 
 
     def run(self, result):
+        print("running case", self.id())
         self.result = result
         result.started(self)
         d = maybeDeferred(getattr(self, self.methodName))
@@ -115,48 +123,33 @@ class TestCase(object):
 
 class PhantomResult(object):
 
-    def __init__(self):
+    def __init__(self, callPhantom):
         self.passes = 0
         self.failures = 0
-        JS("""
-        if ($wnd.callPhantom === undefined) {
-            $wnd.callPhantom = function (x) {
-                console.log(x);
-            }
-        }
-        """)
+        self.callPhantom = callPhantom
 
 
     def started(self, case):
         caseID = case.id()
-        caseID
-        JS("""
-            $wnd.callPhantom({'command': 'test-started',
-                        'caseID': caseID});
-        """)
+        self.callPhantom({'command': 'test-started',
+                          'caseID': caseID})
 
 
     def success(self, case):
         caseID = case.id()
-        caseID
         self.passes += 1
-        JS("""
-            $wnd.callPhantom({'command': 'test-ended',
-                        'caseID': caseID,
-                        'failed': false});
-        """)
+        self.callPhantom({'command': 'test-ended',
+                          'caseID': caseID,
+                          'failed': False});
 
 
     def failure(self, case, explanation):
         caseID = case.id()
-        caseID
         self.failures += 1
-        JS("""
-            $wnd.callPhantom({'command': 'test-ended',
-                        'caseID': caseID,
-                        'failed': true,
-                        'explanation': explanation});
-        """)
+        self.callPhantom({'command': 'test-ended',
+                          'caseID': caseID,
+                          'failed': True,
+                          'explanation': explanation})
 
 
     def done(self):
@@ -167,19 +160,7 @@ class PhantomResult(object):
             result = 'OK'
         print("Results: [%s] %d PASSED %d FAILED" %
               (result, self.passes, self.failures))
-        JS("""
-            $wnd.callPhantom({'command': 'exit', 'status': @{{failed}}});
-        """)
-
-
-
-def type_workaround(x):
-    try:
-        return type(x)
-    except:
-        class Dummy:
-            pass
-        return Dummy
+        self.callPhantom({'command': 'run-ended', 'status': failed})
 
 
 
@@ -187,22 +168,27 @@ class Executor(object):
 
     def __init__(self, namespace):
         cases = []
-        skip = ['__was_initialized__', '__repr__']
+        skip = ['__class__', '__repr__']
         for key in namespace:
             if key in skip:
                 continue
             obj = namespace[key]
-            t = type_workaround(obj)
-            if t is type and issubclass(obj, TestCase) and obj is not TestCase:
-                cases.append(namespace[key].suite())
+            t = type(obj)
+            if t is type:
+                if issubclass(obj, TestCase):
+                    if obj is not TestCase:
+                        cases.append(namespace[key].suite())
         self.suite = TestSuite("Root", cases)
 
 
     def execute(self):
-        result = PhantomResult()
+        from browser import window
+        if hasattr(window, "callPhantom"):
+            callPhantom = window.callPhantom
+        else:
+            callPhantom = window.console.log
+        result = PhantomResult(callPhantom)
         def done(what):
             result.done()
         self.suite.run(result).addBoth(done)
 
-# discover test cases
-# execute test cases

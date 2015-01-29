@@ -7,7 +7,12 @@ var args = system.args;
 page.onConsoleMessage = function (msg, lineNum, sourceId) {
     // Logging is accomplished with 'print' statements, so elide the trailing
     // '\n'.
-    console.log(msg.replace(/\n$/, ""));
+    // console.log(msg.replace(/\n$/, ""));
+    var emsg = "Error 404 means that";
+    // I don't need to hear about every failed import attempt.
+    if (msg.slice(0, emsg.length) !== emsg) {
+        console.log(msg.replace(/\n$/, ""));
+    }
 };
 
 page.onAlert = function(msg) {
@@ -32,7 +37,10 @@ page.onError = function(msg, trace) {
 page.onCallback = function (message) {
     // console.log("Phantom Callback." + message.command);
     switch (message.command) {
-    case "exit":
+    case "run-started":
+        console.log("Test run beginning!");
+        break;
+    case "run-ended":
         phantom.exit(message.status);
         break;
     case "test-started":
