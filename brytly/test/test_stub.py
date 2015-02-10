@@ -1,4 +1,6 @@
 
+from deferred import Deferred
+
 from brytly.phantestic import TestCase
 
 class MyTest(TestCase):
@@ -17,3 +19,12 @@ class MyTest(TestCase):
         
         """
         self.assertEquals(1, 0)
+
+    def test_slowly(self):
+        """
+        
+        """
+        from browser import window
+        d = Deferred()
+        window.setTimeout(lambda: d.callback(None), 5000)
+        return d
