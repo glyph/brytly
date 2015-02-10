@@ -7,28 +7,32 @@ class TestFailure(Exception):
     """
 
 
-
 class SuiteRun(object):
+    counter = 0
     def __init__(self, suiteID, caseIterator, result):
+        SuiteRun.counter += 1
+        self.instanceNumber = SuiteRun.counter
         self.suiteID = suiteID
         self.caseIterator = caseIterator
         self.result = result
         self.finished = Deferred()
 
 
-    def keepGoing(self, hrm=None):
-        print("keeping going", self.suiteID, hrm)
+    def keepGoing(self):
         try:
             case = next(self.caseIterator)
         except StopIteration:
-            self.finished.callback(None)
+            self.finished.callback(self)
         else:
-            print("adding keepGoing callback", self.suiteID)
-            keepGoingCB = lambda result: self.keepGoing()
             d = case.run(self.result)
-            # d.addBoth(lambda result: self.keepGoing())
-            # ^ why doesn't this work?
-            d.addBoth(keepGoingCB)
+            d.addBoth(lambda result: self.keepGoing())
+
+
+    def __str__(self):
+        """
+        Repr for SuiteRun.
+        """
+        return "<SuiteRun for " + self.suiteID + ">"
 
 
 
@@ -43,9 +47,7 @@ class TestSuite(object):
 
 
     def run(self, result):
-        print("running suite", self.id())
         run = SuiteRun(self.id(), iter(self.cases), result)
-        print("initial")
         run.keepGoing()
         return run.finished
 
@@ -108,14 +110,15 @@ class TestCase(object):
 
 
     def run(self, result):
-        print("running case", self.id())
         self.result = result
         result.started(self)
         d = maybeDeferred(getattr(self, self.methodName))
         def ok(r):
             result.success(self)
+            return "TEST/OK"
         def bad(r):
             result.failure(self, r.getTraceback())
+            return "TEST/FAIL"
         d.addCallbacks(ok, bad)
         return d
 
