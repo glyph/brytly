@@ -10,11 +10,10 @@ class MyTest(TestCase):
         """
         
         """
-        print("ok")
+        self.assertEquals(1, 1)
 
     def test_fail(self):
         """
         
         """
-        print("fail")
         self.assertEquals(1, 0)
