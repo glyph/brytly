@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>ajax junk</title>
+    <script src="/src/brython.js"></script>
+    <script type="text/python">
+      print("BEGIN")
+      from browser import document
+      btn = document.getElementById("slow_goer")
+      print("BUTTON", btn)
+      from brytly import ajaxy
+      print("BINDING")
+      btn.bind("click", ajaxy.go_slow)
+      print("BOUND")
+    </script>
+  </head>
+  <body onload="brython({debug: true})">
+    <h1>ajax junk</h1>
+
+    <button id="slow_goer">
+      AJAX JUNK
+    </button>
+
+  </body>
+</html>
