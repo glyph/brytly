@@ -28,18 +28,20 @@ def slow(request):
 @route("/")
 def slash(request):
     """
-    Redirect to /site for now.
+    Redirect to /www for now.
     """
-    return Redirect("/site")
+    return Redirect("/www")
 
 
-@route("/src/Lib/site-packages/", branch=True, strict_slashes=True)
+@route("/www/src/Lib/site-packages/", branch=True, strict_slashes=True)
 def sitePackages(request):
     """
     This is a bit of a hack until there is some official way to do
     https://github.com/brython-dev/brython/issues/119
     """
-    sitePackageDir = (BRYTHON_DIR.getChild("src", request)
+    sitePackageDir = (BRYTHON_DIR
+                      .getChild("www", request)
+                      .getChild("src", request)
                       .getChild("Lib", request)
                       .getChild("site-packages", request))
     for pkg in [File("../Deferred/deferred"),
@@ -48,20 +50,12 @@ def sitePackages(request):
     return sitePackageDir
 
 
-@route("/site/", branch=True, strict_slashes=True)
+@route("/www/", branch=True, strict_slashes=True)
 def site(request):
     """
-    Get the /site/ dir from brython.
+    Get the /www/ dir from brython.
     """
-    return BRYTHON_DIR.getChild("site", request)
-
-
-@route("/src/", branch=True, strict_slashes=True)
-def src(request):
-    """
-    Get the /src/ dir from brython.
-    """
-    return BRYTHON_DIR.getChild("src", None)
+    return BRYTHON_DIR.getChild("www", request)
 
 
 @route("/test")
@@ -73,7 +67,7 @@ def test(request):
         <html>
           <head>
             <title>TESTS</title>
-            <script src="/src/brython.js"></script>
+            <script src="/www/src/brython.js"></script>
           </head>
           <body onload="brython()">
             L O A D I N G
