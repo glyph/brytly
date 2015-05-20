@@ -5,6 +5,8 @@ from twisted.web.static import File
 from twisted.internet.task import LoopingCall
 from twisted.web.util import Redirect
 
+from twisted.python.modules import theSystemPath
+
 BRYTHON_DIR = File("../Brython")
 
 @route("/slow")
@@ -44,9 +46,12 @@ def sitePackages(request):
                       .getChild("src", request)
                       .getChild("Lib", request)
                       .getChild("site-packages", request))
-    for pkg in [File("../Deferred/deferred"),
-                File("brytly")]:
-        sitePackageDir.putChild(pkg.basename(), pkg)
+    for pkg in theSystemPath.iterModules():
+        if pkg.isPackage():
+            pkgdir = pkg.filePath.parent()
+            # print("ADDING", pkgdir.basename())
+            modulePackage = File(pkgdir.path)
+            sitePackageDir.putChild(modulePackage.basename(), modulePackage)
     return sitePackageDir
 
 
