@@ -35,6 +35,7 @@ def slash(request):
     return Redirect("/www")
 
 
+
 @route("/www/src/Lib/site-packages/", branch=True, strict_slashes=True)
 def sitePackages(request):
     """
@@ -55,12 +56,14 @@ def sitePackages(request):
     return sitePackageDir
 
 
+
 @route("/www/", branch=True, strict_slashes=True)
 def site(request):
     """
     Get the /www/ dir from brython.
     """
     return BRYTHON_DIR.getChild("www", request)
+
 
 
 @route("/test")
