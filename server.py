@@ -102,4 +102,42 @@ def ajax(request):
     return open("ajax.html").read()
 
 
-run("localhost", 8912)
+
+if __name__ == '__main__':
+    from twisted.web.server import Site
+    from twisted.web.resource import IResource
+    from twisted.internet import reactor
+    from twisted.internet.endpoints import serverFromString
+    from twisted.python.components import proxyForInterface
+    from twisted.logger import globalLogBeginner, textFileLogObserver
+
+    def fixpp(request):
+        while True:
+            try:
+                idx = request.postpath.index(b'')
+            except ValueError:
+                break
+            else:
+                if idx + 1 == len(request.postpath):
+                    break
+                else:
+                    request.postpath.pop(idx)
+
+    class Deslasher(proxyForInterface(IResource)):
+        def render(self, request):
+            """
+            Klein's resource is a leaf, so everything goes through render() and
+            does dispatch internally.
+            """
+            fixpp(request)
+            return super(Deslasher, self).render(request)
+
+    from klein import resource
+    root = Deslasher(resource())
+
+    endpoint = serverFromString(reactor, b"tcp:8192")
+    endpoint.listen(Site(root))
+    import sys
+    globalLogBeginner.beginLoggingTo([textFileLogObserver(sys.stdout)])
+
+    reactor.run()
