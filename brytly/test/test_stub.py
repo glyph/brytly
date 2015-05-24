@@ -28,7 +28,8 @@ class MyTest(TestCase):
         from browser import window
         d = Deferred()
         print("one")
-        later = lambda: d.callback(None)
+        def later():
+            d.callback(None)
         print("two")
         window.setTimeout(later, 5000)
         print("three")
