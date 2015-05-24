@@ -1,13 +1,14 @@
 
-from klein import run, route
+from klein import route
 
+from twisted.python.filepath import FilePath
 from twisted.web.static import File
 from twisted.internet.task import LoopingCall
 from twisted.web.util import Redirect
 
 from twisted.python.modules import theSystemPath
 
-BRYTHON_DIR = File("../Brython")
+BRYTHON_DIR = File(FilePath(__file__).sibling("Brython").path)
 
 @route("/slow")
 def slow(request):
@@ -47,12 +48,20 @@ def sitePackages(request):
                       .getChild("src", request)
                       .getChild("Lib", request)
                       .getChild("site-packages", request))
-    for pkg in theSystemPath.iterModules():
-        if pkg.isPackage():
-            pkgdir = pkg.filePath.parent()
-            # print("ADDING", pkgdir.basename())
-            modulePackage = File(pkgdir.path)
-            sitePackageDir.putChild(modulePackage.basename(), modulePackage)
+    def pathEntryFiles():
+        # Special case Deferred since there's no brython-compatible version on
+        # PyPI yet.
+        yield File(
+            FilePath(__file__).sibling("Deferred").child("deferred").path
+        )
+        for pkg in theSystemPath.iterModules():
+            if pkg.isPackage():
+                pkgdir = pkg.filePath.parent()
+                # print("ADDING", pkgdir.basename())
+                modulePackage = File(pkgdir.path)
+                yield modulePackage
+    for pathEntryFile in pathEntryFiles():
+        sitePackageDir.putChild(pathEntryFile.basename(), pathEntryFile)
     return sitePackageDir
 
 

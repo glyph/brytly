@@ -1,0 +1,6 @@
+[submodule "Brython"]
+	path = Brython
+	url = https://github.com/brython-dev/brython
+[submodule "Deferred"]
+	path = Deferred
+	url = https://github.com/glyph/deferred
